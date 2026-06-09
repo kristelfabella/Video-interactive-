@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Video Carousel</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#f5f6fa;
+  --surface:#ffffff;
+  --border:#e2e4ed;
+  --accent:#2563eb;
+  --accent-hover:#1d4ed8;
+  --accent-light:#eff4ff;
+  --danger:#dc2626;
+  --success:#16a34a;
+  --text:#1a1d2e;
+  --muted:#6b7280;
+  --radius:12px;
+  --shadow:0 1px 4px rgba(0,0,0,0.08),0 4px 16px rgba(0,0,0,0.06);
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+/* ── TAB BAR ── */
+.tab-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--surface);border-bottom:1px solid var(--border);
+  padding:0 24px;height:56px;
+  position:sticky;top:0;z-index:100;
+}
+.tab-bar-left{display:flex;align-items:center;gap:8px;}
+.tab-bar h1{font-size:0.95rem;font-weight:600;color:var(--text);}
+.tab-btn{
+  padding:6px 18px;border-radius:20px;border:1px solid transparent;
+  font-size:0.82rem;font-weight:500;cursor:pointer;transition:all 0.15s;
+  background:none;color:var(--muted);
+}
+.tab-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.tab-btn:not(.active):hover{background:var(--accent-light);color:var(--accent);border-color:var(--border);}
+.tab-bar-right{display:flex;gap:8px;align-items:center;}
+.badge{
+  font-size:0.72rem;padding:2px 9px;border-radius:20px;font-weight:600;
+  background:var(--accent-light);color:var(--accent);
+}
+.badge.admin{background:#fef3c7;color:#92400e;}
+
+/* ── VIEWS ── */
+.view{display:none;padding:32px 24px;max-width:900px;margin:0 auto;}
+.view.active{display:block;}
+
+/* ── LOGIN WALL ── */
+.login-wall{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:calc(100vh - 56px);
+}
+.login-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:16px;
+  padding:40px 36px;width:100%;max-width:380px;box-shadow:var(--shadow);
+  text-align:center;
+}
+.login-card svg{margin-bottom:16px;color:var(--accent);}
+.login-card h2{font-size:1.15rem;font-weight:700;margin-bottom:6px;}
+.login-card p{font-size:0.85rem;color:var(--muted);margin-bottom:24px;}
+.input-field{
+  width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;
+  font-size:0.9rem;font-family:inherit;outline:none;transition:border-color 0.15s;
+  background:var(--bg);
+}
+.input-field:focus{border-color:var(--accent);background:#fff;}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:10px 20px;border-radius:8px;font-size:0.88rem;font-weight:600;
+  cursor:pointer;border:none;transition:all 0.15s;font-family:inherit;
+}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent-hover);}
+.btn-danger{background:var(--danger);color:#fff;}
+.btn-danger:hover{background:#b91c1c;}
+.btn-ghost{background:none;border:1px solid var(--border);color:var(--muted);}
+.btn-ghost:hover{background:var(--bg);color:var(--text);}
+.btn-full{width:100%;margin-top:16px;}
+.error-msg{
+  font-size:0.82rem;color:var(--danger);background:#fef2f2;
+  border:1px solid #fecaca;border-radius:6px;padding:8px 12px;
+  margin-top:12px;display:none;
+}
+.error-msg.show{display:block;}
+
+/* ── ADMIN VIEW ── */
+.admin-header{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:28px;flex-wrap:wrap;gap:12px;
+}
+.admin-header h2{font-size:1.2rem;font-weight:700;}
+.admin-header p{font-size:0.83rem;color:var(--muted);margin-top:2px;}
+
+/* Add video panel */
+.add-panel{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:24px;margin-bottom:28px;box-shadow:var(--shadow);
+}
+.add-panel h3{font-size:0.9rem;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.tab-pills{display:flex;gap:6px;margin-bottom:16px;}
+.pill{
+  padding:5px 14px;border-radius:20px;border:1px solid var(--border);
+  font-size:0.8rem;font-weight:500;cursor:pointer;background:none;color:var(--muted);
+  font-family:inherit;transition:all 0.15s;
+}
+.pill.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.add-form{display:flex;gap:10px;flex-wrap:wrap;}
+.add-form .input-field{flex:1;min-width:200px;}
+.upload-zone{
+  border:2px dashed var(--border);border-radius:10px;padding:24px;
+  text-align:center;cursor:pointer;transition:border-color 0.15s,background 0.15s;
+  background:var(--bg);
+}
+.upload-zone:hover,.upload-zone.drag-over{border-color:var(--accent);background:var(--accent-light);}
+.upload-zone p{font-size:0.85rem;color:var(--muted);}
+.upload-zone span{color:var(--accent);font-weight:600;}
+.upload-zone small{display:block;margin-top:4px;font-size:0.75rem;color:var(--muted);}
+#file-input-admin{display:none;}
+
+/* Video list */
+.video-list-header{
+  display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;
+}
+.video-list-header h3{font-size:0.9rem;font-weight:600;}
+.video-count{font-size:0.78rem;color:var(--muted);}
+.video-list{display:flex;flex-direction:column;gap:10px;}
+.video-item{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:14px 16px;display:flex;align-items:center;gap:14px;
+  box-shadow:var(--shadow);transition:border-color 0.15s;
+}
+.video-item:hover{border-color:var(--accent);}
+.video-item .thumb-mini{
+  width:80px;height:50px;border-radius:7px;object-fit:cover;
+  background:#000;flex-shrink:0;
+}
+.video-item .thumb-mini video{width:100%;height:100%;object-fit:cover;border-radius:7px;}
+.video-item-info{flex:1;min-width:0;}
+.video-item-info .vname{
+  font-size:0.88rem;font-weight:500;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.video-item-info .vsub{font-size:0.75rem;color:var(--muted);margin-top:3px;}
+.video-item-actions{display:flex;gap:8px;flex-shrink:0;}
+.icon-btn{
+  width:32px;height:32px;border-radius:7px;border:1px solid var(--border);
+  background:none;color:var(--muted);cursor:pointer;display:flex;
+  align-items:center;justify-content:center;transition:all 0.15s;
+}
+.icon-btn:hover{background:var(--bg);color:var(--text);border-color:var(--text);}
+.icon-btn.del:hover{background:#fef2f2;color:var(--danger);border-color:#fecaca;}
+.drag-handle{cursor:grab;color:var(--border);}
+.drag-handle:active{cursor:grabbing;}
+.empty-list{
+  text-align:center;padding:40px 20px;color:var(--muted);
+  border:1px dashed var(--border);border-radius:var(--radius);
+  background:var(--surface);
+}
+.empty-list svg{opacity:0.3;margin-bottom:10px;}
+.empty-list p{font-size:0.85rem;}
+
+/* ── STUDENT VIEW / CAROUSEL ── */
+.student-header{margin-bottom:24px;}
+.student-header h2{font-size:1.2rem;font-weight:700;}
+.student-header p{font-size:0.83rem;color:var(--muted);margin-top:2px;}
+
+.carousel-wrap{width:100%;}
+.stage{
+  position:relative;background:#000;border-radius:var(--radius);
+  overflow:hidden;aspect-ratio:16/9;display:flex;
+  align-items:center;justify-content:center;box-shadow:var(--shadow);
+}
+.stage video{width:100%;height:100%;object-fit:contain;display:block;}
+.stage .no-video-msg{
+  text-align:center;color:rgba(255,255,255,0.4);padding:20px;
+}
+.stage .no-video-msg svg{margin-bottom:10px;opacity:0.4;}
+.stage .no-video-msg p{font-size:0.88rem;}
+.nav-btn{
+  position:absolute;top:50%;transform:translateY(-50%);
+  background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);
+  border:1px solid rgba(255,255,255,0.15);color:#fff;
+  width:42px;height:42px;border-radius:50%;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  z-index:10;transition:background 0.15s;
+}
+.nav-btn:hover{background:var(--accent);}
+.nav-btn.prev{left:14px;}
+.nav-btn.next{right:14px;}
+.vid-counter{
+  position:absolute;top:12px;right:14px;
+  background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:20px;padding:3px 10px;
+  font-size:0.73rem;color:rgba(255,255,255,0.7);z-index:10;
+}
+.vid-label{
+  position:absolute;bottom:0;left:0;right:0;
+  padding:36px 16px 14px;
+  background:linear-gradient(transparent,rgba(0,0,0,0.65));
+  font-size:0.8rem;color:rgba(255,255,255,0.8);
+  pointer-events:none;opacity:0;transition:opacity 0.2s;
+}
+.stage:hover .vid-label{opacity:1;}
+
+/* controls */
+.ctrl-bar{
+  display:flex;align-items:center;gap:10px;margin-top:14px;
+}
+.ctrl-btn{
+  width:34px;height:34px;border-radius:7px;
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all 0.15s;flex-shrink:0;
+}
+.ctrl-btn:hover,.ctrl-btn.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+.progress-wrap{flex:1;display:flex;flex-direction:column;gap:4px;}
+.prog-bar{
+  height:5px;background:var(--border);border-radius:99px;cursor:pointer;overflow:hidden;
+}
+.prog-fill{
+  height:100%;background:var(--accent);border-radius:99px;
+  width:0%;transition:width 0.1s linear;pointer-events:none;
+}
+.time-lbl{font-size:0.7rem;color:var(--muted);}
+.vol-wrap{display:flex;align-items:center;gap:7px;flex-shrink:0;}
+input[type=range].vol{
+  -webkit-appearance:none;width:68px;height:4px;
+  background:var(--border);border-radius:99px;cursor:pointer;outline:none;
+}
+input[type=range].vol::-webkit-slider-thumb{
+  -webkit-appearance:none;width:13px;height:13px;
+  border-radius:50%;background:var(--accent);cursor:pointer;
+}
+.auto-lbl{
+  display:flex;align-items:center;gap:6px;font-size:0.76rem;
+  color:var(--muted);cursor:pointer;user-select:none;flex-shrink:0;
+}
+.auto-lbl input{display:none;}
+.tog{width:30px;height:17px;background:var(--border);border-radius:99px;position:relative;transition:background 0.2s;}
+.tog::after{content:'';position:absolute;top:2px;left:2px;width:13px;height:13px;background:#fff;border-radius:50%;transition:transform 0.2s;}
+.auto-lbl input:checked+.tog{background:var(--accent);}
+.auto-lbl input:checked+.tog::after{transform:translateX(13px);}
+
+/* thumbnails */
+.thumbs-row{display:flex;gap:9px;overflow-x:auto;padding:14px 0 4px;
+  scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+.thumbs-row::-webkit-scrollbar{height:4px;}
+.thumbs-row::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+.thumb{
+  flex:0 0 110px;height:66px;border-radius:8px;overflow:hidden;
+  cursor:pointer;border:2px solid transparent;
+  transition:border-color 0.15s,transform 0.15s;background:#000;position:relative;
+}
+.thumb:hover{transform:scale(1.04);}
+.thumb.active{border-color:var(--accent);}
+.thumb video{width:100%;height:100%;object-fit:cover;pointer-events:none;}
+.thumb .tname{
+  position:absolute;bottom:0;left:0;right:0;
+  background:rgba(0,0,0,0.55);font-size:0.65rem;
+  color:rgba(255,255,255,0.85);padding:3px 5px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.dots{display:flex;justify-content:center;gap:6px;margin-top:14px;}
+.dot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--border);cursor:pointer;transition:all 0.15s;
+}
+.dot.active{background:var(--accent);transform:scale(1.3);}
+
+.no-content{
+  text-align:center;padding:60px 20px;color:var(--muted);
+}
+.no-content svg{opacity:0.25;margin-bottom:14px;}
+.no-content p{font-size:0.9rem;}
+
+/* toast */
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);
+  background:#1a1d2e;color:#fff;padding:10px 20px;border-radius:8px;
+  font-size:0.83rem;font-weight:500;opacity:0;transition:all 0.3s;z-index:999;
+  white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+@media(max-width:540px){
+  .vol-wrap,.auto-lbl{display:none;}
+  .thumb{flex:0 0 85px;height:52px;}
+  .view{padding:20px 14px;}
+}
+</style>
+</head>
+<body>
+
+<!-- TAB BAR -->
+<div class="tab-bar">
+  <div class="tab-bar-left">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+    <h1>Course Videos</h1>
+  </div>
+  <div class="tab-bar-right">
+    <span class="badge" id="role-badge">Student</span>
+    <button class="tab-btn active" id="tab-student" onclick="switchTab('student')">▶ Watch</button>
+    <button class="tab-btn" id="tab-admin" onclick="switchTab('admin')">⚙ Manage</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     STUDENT VIEW
+══════════════════════════════════════════ -->
+<div class="view active" id="view-student">
+  <div class="student-header">
+    <h2>Course Videos</h2>
+    <p>Watch the lessons your instructor has prepared for you</p>
+  </div>
+
+  <!-- Carousel -->
+  <div id="student-carousel">
+    <div class="no-content" id="student-empty">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15 10l4.553-2.069A1 1 0 0 1 21 8.845v6.31a1 1 0 0 1-1.447.894L15 14"/><rect x="2" y="6" width="13" height="12" rx="2"/></svg>
+      <p>No videos available yet.<br>Check back soon!</p>
+    </div>
+    <div id="student-player" style="display:none">
+      <div class="stage" id="s-stage">
+        <div class="nav-btn prev" id="s-prev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></div>
+        <div class="nav-btn next" id="s-next"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></div>
+        <div class="vid-counter" id="s-counter"></div>
+        <div class="vid-label" id="s-label"></div>
+      </div>
+      <div class="ctrl-bar">
+        <button class="ctrl-btn" id="s-play">
+          <svg id="s-icon-play" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <svg id="s-icon-pause" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="display:none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+        </button>
+        <div class="progress-wrap">
+          <div class="prog-bar" id="s-prog"><div class="prog-fill" id="s-fill"></div></div>
+          <span class="time-lbl" id="s-time">0:00 / 0:00</span>
+        </div>
+        <div class="vol-wrap">
+          <button class="ctrl-btn" id="s-mute">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+          </button>
+          <input type="range" class="vol" id="s-vol" min="0" max="1" step="0.05" value="1"/>
+        </div>
+        <button class="ctrl-btn" id="s-fs">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+        </button>
+        <label class="auto-lbl">
+          <input type="checkbox" id="s-auto" checked/><span class="tog"></span>Auto
+        </label>
+      </div>
+      <div class="thumbs-row" id="s-thumbs"></div>
+      <div class="dots" id="s-dots"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     ADMIN LOGIN GATE
+══════════════════════════════════════════ -->
+<div class="view" id="view-admin">
+  <!-- Login wall -->
+  <div class="login-wall" id="login-wall">
+    <div class="login-card">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      <h2>Instructor Access</h2>
+      <p>Enter the admin password to manage course videos</p>
+      <input class="input-field" type="password" id="pw-input" placeholder="Enter password" onkeydown="if(event.key==='Enter')tryLogin()"/>
+      <div class="error-msg" id="pw-error">Incorrect password. Try again.</div>
+      <button class="btn btn-primary btn-full" onclick="tryLogin()">Unlock Admin Panel</button>
+      <p style="margin-top:16px;font-size:0.75rem;color:var(--muted);">Default password: <strong>admin123</strong> — change it in the code</p>
+    </div>
+  </div>
+
+  <!-- Admin panel (hidden until logged in) -->
+  <div id="admin-panel" style="display:none">
+    <div class="admin-header">
+      <div>
+        <h2>Manage Videos</h2>
+        <p>Add, remove, or reorder the videos students will see</p>
+      </div>
+      <button class="btn btn-ghost" onclick="logout()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Log out
+      </button>
+    </div>
+
+    <!-- Add Video Panel -->
+    <div class="add-panel">
+      <h3>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        Add a Video
+      </h3>
+      <div class="tab-pills">
+        <button class="pill active" id="pill-url" onclick="switchAddTab('url')">🔗 Paste URL</button>
+        <button class="pill" id="pill-file" onclick="switchAddTab('file')">📁 Upload File</button>
+      </div>
+
+      <!-- URL tab -->
+      <div id="add-url-tab">
+        <div class="add-form">
+          <input class="input-field" id="url-input" type="url" placeholder="https://example.com/video.mp4 or YouTube/Vimeo URL"/>
+          <input class="input-field" id="url-title" type="text" placeholder="Video title (optional)" style="max-width:220px;"/>
+          <button class="btn btn-primary" onclick="addFromURL()">Add Video</button>
+        </div>
+        <p style="font-size:0.75rem;color:var(--muted);margin-top:10px;">Supports direct .mp4/.webm links. For YouTube/Vimeo, use their embed URL.</p>
+      </div>
+
+      <!-- File tab -->
+      <div id="add-file-tab" style="display:none">
+        <div class="upload-zone" id="admin-upload-zone">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:8px;opacity:0.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <p><span onclick="document.getElementById('file-input-admin').click()">Click to upload</span> or drag & drop videos here</p>
+          <small>MP4, WebM, MOV — multiple files at once. Large files may take a moment to load.</small>
+        </div>
+        <input type="file" id="file-input-admin" accept="video/*" multiple/>
+      </div>
+    </div>
+
+    <!-- Video List -->
+    <div class="video-list-header">
+      <h3>Playlist <span class="video-count" id="vcount"></span></h3>
+      <button class="btn btn-ghost" onclick="clearAll()" id="clear-btn" style="display:none;font-size:0.8rem;padding:6px 14px;">Clear all</button>
+    </div>
+    <div id="admin-video-list">
+      <div class="empty-list" id="admin-empty">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15 10l4.553-2.069A1 1 0 0 1 21 8.845v6.31a1 1 0 0 1-1.447.894L15 14"/><rect x="2" y="6" width="13" height="12" rx="2"/></svg>
+        <p>No videos added yet.<br>Add your first video above.</p>
+      </div>
+      <div class="video-list" id="video-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ── Change this password before deploying!
+const ADMIN_PASSWORD = 'admin123';
+
+// ── State ──
+let videos = [];      // { id, name, url, type } — type: 'file'|'url'|'embed'
+let sIdx = -1;        // student carousel current index
+let sVid = null;      // active <video> element
+let isAdmin = false;
+let dragSrc = null;
+
+// ── Helpers ──
+function uid(){ return Math.random().toString(36).slice(2,9); }
+function fmt(s){
+  if(isNaN(s)||!isFinite(s)) return '0:00';
+  const m=Math.floor(s/60),sec=Math.floor(s%60).toString().padStart(2,'0');
+  return `${m}:${sec}`;
+}
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2400);
+}
+
+// ── Tab switching ──
+function switchTab(tab){
+  document.getElementById('view-student').classList.toggle('active', tab==='student');
+  document.getElementById('view-admin').classList.toggle('active', tab==='admin');
+  document.getElementById('tab-student').classList.toggle('active', tab==='student');
+  document.getElementById('tab-admin').classList.toggle('active', tab==='admin');
+}
+
+// ── Login ──
+function tryLogin(){
+  const pw=document.getElementById('pw-input').value;
+  const err=document.getElementById('pw-error');
+  if(pw===ADMIN_PASSWORD){
+    isAdmin=true;
+    document.getElementById('login-wall').style.display='none';
+    document.getElementById('admin-panel').style.display='block';
+    document.getElementById('role-badge').textContent='Admin';
+    document.getElementById('role-badge').className='badge admin';
+    err.classList.remove('show');
+    renderAdminList();
+  } else {
+    err.classList.add('show');
+    document.getElementById('pw-input').value='';
+    document.getElementById('pw-input').focus();
+  }
+}
+function logout(){
+  isAdmin=false;
+  document.getElementById('login-wall').style.display='flex';
+  document.getElementById('admin-panel').style.display='none';
+  document.getElementById('pw-input').value='';
+  document.getElementById('role-badge').textContent='Student';
+  document.getElementById('role-badge').className='badge';
+  switchTab('student');
+}
+
+// ── Add-tab pills ──
+function switchAddTab(t){
+  document.getElementById('add-url-tab').style.display = t==='url' ? 'block':'none';
+  document.getElementById('add-file-tab').style.display = t==='file'? 'block':'none';
+  document.getElementById('pill-url').classList.toggle('active', t==='url');
+  document.getElementById('pill-file').classList.toggle('active', t==='file');
+}
+
+// ── Add from URL ──
+function addFromURL(){
+  const raw=document.getElementById('url-input').value.trim();
+  const title=document.getElementById('url-title').value.trim();
+  if(!raw){ toast('Please enter a video URL'); return; }
+
+  let url=raw, type='url', name=title||raw.split('/').pop().split('?')[0]||'Untitled';
+
+  // YouTube
+  const ytMatch = raw.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?/]+)/);
+  if(ytMatch){ url=`https://www.youtube.com/embed/${ytMatch[1]}`; type='embed'; name=title||'YouTube Video'; }
+
+  // Vimeo
+  const vmMatch = raw.match(/vimeo\.com\/(\d+)/);
+  if(vmMatch){ url=`https://player.vimeo.com/video/${vmMatch[1]}`; type='embed'; name=title||'Vimeo Video'; }
+
+  videos.push({ id:uid(), name, url, type });
+  document.getElementById('url-input').value='';
+  document.getElementById('url-title').value='';
+  toast(`"${name}" added`);
+  renderAll();
+}
+
+// ── Add from file ──
+document.getElementById('file-input-admin').addEventListener('change', e=>handleFiles(e.target.files));
+const az=document.getElementById('admin-upload-zone');
+az.addEventListener('dragover',e=>{e.preventDefault();az.classList.add('drag-over');});
+az.addEventListener('dragleave',()=>az.classList.remove('drag-over'));
+az.addEventListener('drop',e=>{e.preventDefault();az.classList.remove('drag-over');handleFiles(e.dataTransfer.files);});
+
+function handleFiles(fileList){
+  const files = Array.from(fileList).filter(f=>f.type.startsWith('video/'));
+  if(!files.length){ toast('No valid video files found'); return; }
+
+  let loaded=0;
+  toast('Loading video'+( files.length>1?'s':'')+'…');
+
+  files.forEach(f=>{
+    const reader = new FileReader();
+    reader.onload = e => {
+      videos.push({ id:uid(), name:f.name, url:e.target.result, type:'file' });
+      loaded++;
+      if(loaded===files.length){
+        toast(`${loaded} video${loaded>1?'s':''} added`);
+        renderAll();
+      }
+    };
+    reader.onerror = () => {
+      loaded++;
+      toast('Failed to read: '+f.name);
+      if(loaded===files.length) renderAll();
+    };
+    reader.readAsDataURL(f); // base64 — works on file:// with no server needed
+  });
+}
+
+// ── Remove & clear ──
+function removeVideo(id){
+  videos=videos.filter(x=>x.id!==id);
+  if(sIdx>=videos.length) sIdx=videos.length-1;
+  renderAll();
+  toast('Video removed');
+}
+function clearAll(){
+  if(!confirm('Remove all videos?')) return;
+  videos=[];sIdx=-1;sVid=null;
+  renderAll();
+}
+
+// ── Drag to reorder ──
+function onDragStart(e,id){ dragSrc=id; e.dataTransfer.effectAllowed='move'; }
+function onDragOver(e,id){ e.preventDefault(); if(dragSrc===id) return;
+  const fi=videos.findIndex(x=>x.id===dragSrc);
+  const ti=videos.findIndex(x=>x.id===id);
+  if(fi<0||ti<0) return;
+  const tmp=videos[fi];videos[fi]=videos[ti];videos[ti]=tmp;
+  renderAdminList();
+}
+function onDragEnd(){ dragSrc=null; renderAll(); }
+
+// ── Render ──
+function renderAll(){ renderAdminList(); renderStudentCarousel(); }
+
+function renderAdminList(){
+  if(!isAdmin) return;
+  const listEl=document.getElementById('video-list');
+  const emptyEl=document.getElementById('admin-empty');
+  const vcnt=document.getElementById('vcount');
+  const clrBtn=document.getElementById('clear-btn');
+
+  vcnt.textContent=videos.length ? `(${videos.length})` : '';
+  clrBtn.style.display=videos.length ? 'inline-flex' : 'none';
+
+  if(!videos.length){ emptyEl.style.display='block'; listEl.innerHTML=''; return; }
+  emptyEl.style.display='none';
+
+  listEl.innerHTML='';
+  videos.forEach((v,i)=>{
+    const item=document.createElement('div');
+    item.className='video-item';
+    item.draggable=true;
+    item.addEventListener('dragstart',e=>onDragStart(e,v.id));
+    item.addEventListener('dragover',e=>onDragOver(e,v.id));
+    item.addEventListener('dragend',onDragEnd);
+
+    const thumb=document.createElement('div');
+    thumb.className='thumb-mini';
+    if(v.type==='embed'){
+      thumb.style.background='#1a1d2e';thumb.style.display='flex';
+      thumb.style.alignItems='center';thumb.style.justifyContent='center';
+      thumb.innerHTML=`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>`;
+    } else {
+      const vEl=document.createElement('video');
+      vEl.src=v.url;vEl.muted=true;vEl.currentTime=1;
+      thumb.appendChild(vEl);
+    }
+
+    item.innerHTML=`
+      <div class="drag-handle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="18" x2="16" y2="18"/></svg></div>
+    `;
+    item.appendChild(thumb);
+    const info=document.createElement('div');
+    info.className='video-item-info';
+    info.innerHTML=`<div class="vname">${v.name}</div><div class="vsub">#${i+1} &nbsp;·&nbsp; ${v.type==='embed'?'Embed link':v.type==='url'?'External URL':'Local file'}</div>`;
+    item.appendChild(info);
+    const acts=document.createElement('div');
+    acts.className='video-item-actions';
+    acts.innerHTML=`<button class="icon-btn del" title="Remove" onclick="removeVideo('${v.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>`;
+    item.appendChild(acts);
+    listEl.appendChild(item);
+  });
+}
+
+// ── Student carousel ──
+function renderStudentCarousel(){
+  const emptyEl=document.getElementById('student-empty');
+  const playerEl=document.getElementById('student-player');
+  if(!videos.length){
+    emptyEl.style.display='block'; playerEl.style.display='none';
+    if(sVid){sVid.pause();sVid.remove();sVid=null;}
+    sIdx=-1; return;
+  }
+  emptyEl.style.display='none'; playerEl.style.display='block';
+  if(sIdx<0||sIdx>=videos.length) sIdx=0;
+  loadStudentVideo(sIdx);
+}
+
+function loadStudentVideo(idx){
+  sIdx=idx;
+  const v=videos[idx];
+  const stage=document.getElementById('s-stage');
+
+  // remove old player
+  if(sVid){ sVid.pause(); sVid.remove(); sVid=null; }
+  stage.querySelectorAll('video,iframe').forEach(e=>e.remove());
+
+  if(v.type==='embed'){
+    const fr=document.createElement('iframe');
+    fr.src=v.url; fr.style.cssText='width:100%;height:100%;border:0;';
+    fr.allow='autoplay; fullscreen'; fr.allowFullscreen=true;
+    stage.appendChild(fr);
+    document.getElementById('s-play').style.display='none';
+    document.getElementById('s-prog').parentElement.style.display='none';
+  } else {
+    document.getElementById('s-play').style.display='flex';
+    document.getElementById('s-prog').parentElement.style.display='flex';
+    sVid=document.createElement('video');
+    sVid.src=v.url; sVid.controls=false; sVid.playsInline=true;
+    sVid.volume=document.getElementById('s-vol').value;
+    stage.appendChild(sVid);
+    sVid.addEventListener('timeupdate',()=>{
+      if(!sVid.duration) return;
+      document.getElementById('s-fill').style.width=(sVid.currentTime/sVid.duration*100)+'%';
+      document.getElementById('s-time').textContent=`${fmt(sVid.currentTime)} / ${fmt(sVid.duration)}`;
+    });
+    sVid.addEventListener('ended',()=>{
+      if(document.getElementById('s-auto').checked && videos.length>1) sNavigate(1);
+      else updatePlayIcon();
+    });
+    sVid.addEventListener('play',updatePlayIcon);
+    sVid.addEventListener('pause',updatePlayIcon);
+    sVid.play();
+  }
+
+  // label / counter
+  document.getElementById('s-label').textContent=v.name;
+  document.getElementById('s-counter').textContent=`${idx+1} / ${videos.length}`;
+  document.getElementById('s-prev').style.display=videos.length>1?'flex':'none';
+  document.getElementById('s-next').style.display=videos.length>1?'flex':'none';
+
+  renderStudentThumbs();
+  renderStudentDots();
+}
+
+function sNavigate(dir){
+  if(!videos.length) return;
+  loadStudentVideo((sIdx+dir+videos.length)%videos.length);
+}
+
+function updatePlayIcon(){
+  const playing=sVid&&!sVid.paused;
+  document.getElementById('s-icon-play').style.display=playing?'none':'block';
+  document.getElementById('s-icon-pause').style.display=playing?'block':'none';
+}
+
+function renderStudentThumbs(){
+  const row=document.getElementById('s-thumbs');
+  row.innerHTML='';
+  videos.forEach((v,i)=>{
+    const d=document.createElement('div');
+    d.className='thumb'+(i===sIdx?' active':'');
+    if(v.type==='embed'){
+      d.style.background='#1a1d2e';d.style.display='flex';
+      d.style.alignItems='center';d.style.justifyContent='center';
+      d.innerHTML=`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>`;
+    } else {
+      const vid=document.createElement('video');
+      vid.src=v.url;vid.muted=true;vid.currentTime=1;
+      d.appendChild(vid);
+    }
+    const nm=document.createElement('div');
+    nm.className='tname';nm.textContent=v.name;
+    d.appendChild(nm);
+    d.addEventListener('click',()=>loadStudentVideo(i));
+    row.appendChild(d);
+  });
+}
+
+function renderStudentDots(){
+  const el=document.getElementById('s-dots');
+  el.innerHTML='';
+  videos.forEach((_,i)=>{
+    const d=document.createElement('div');
+    d.className='dot'+(i===sIdx?' active':'');
+    d.addEventListener('click',()=>loadStudentVideo(i));
+    el.appendChild(d);
+  });
+}
+
+// ── Student controls ──
+document.getElementById('s-prev').addEventListener('click',()=>sNavigate(-1));
+document.getElementById('s-next').addEventListener('click',()=>sNavigate(1));
+document.getElementById('s-play').addEventListener('click',()=>{
+  if(!sVid) return; sVid.paused?sVid.play():sVid.pause();
+});
+document.getElementById('s-prog').addEventListener('click',e=>{
+  if(!sVid||!sVid.duration) return;
+  const r=document.getElementById('s-prog').getBoundingClientRect();
+  sVid.currentTime=((e.clientX-r.left)/r.width)*sVid.duration;
+});
+document.getElementById('s-vol').addEventListener('input',e=>{ if(sVid) sVid.volume=e.target.value; });
+document.getElementById('s-mute').addEventListener('click',()=>{
+  if(!sVid) return; sVid.muted=!sVid.muted;
+  document.getElementById('s-mute').classList.toggle('on',sVid.muted);
+});
+document.getElementById('s-fs').addEventListener('click',()=>{
+  const stage=document.getElementById('s-stage');
+  document.fullscreenElement?document.exitFullscreen():stage.requestFullscreen&&stage.requestFullscreen();
+});
+
+// keyboard shortcuts (student)
+document.addEventListener('keydown',e=>{
+  if(!sVid||document.activeElement.tagName==='INPUT') return;
+  if(e.key===' '||e.key==='k'){e.preventDefault();sVid.paused?sVid.play():sVid.pause();}
+  if(e.key==='ArrowLeft') sVid.currentTime=Math.max(0,sVid.currentTime-5);
+  if(e.key==='ArrowRight') sVid.currentTime=Math.min(sVid.duration,sVid.currentTime+5);
+});
+
+// enter key on password field
+document.getElementById('pw-input').addEventListener('keydown',e=>{ if(e.key==='Enter') tryLogin(); });
+</script>
+</body>
+</html>
